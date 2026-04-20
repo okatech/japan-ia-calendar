@@ -1,76 +1,107 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Japan IA Calendar — Golden Week 2026</title>
+<title>Japan IA · Golden Week 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<header class="topbar">
-  <div class="title">
-    <h1>🗾 Japan IA Calendar</h1>
-    <p class="subtitle">For Irving Lee · Golden Week & Team Vacations</p>
-  </div>
-  <nav class="member-tabs" id="memberTabs"></nav>
-</header>
+<div class="app">
 
-<section class="legend">
-  <span class="chip chip-gw">Golden Week</span>
-  <span class="chip chip-holiday">Public Holiday</span>
-  <span class="chip chip-weekend">Weekend</span>
-  <span class="chip chip-vacation">Vacation (PTO)</span>
-  <span class="chip chip-today">Today</span>
-</section>
+  <header class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <div class="eyebrow">Japan IA Team · For Irving Lee</div>
+      <h1>Golden Week <span class="accent">2026</span></h1>
+      <p class="lede">A snapshot of public holidays and team time off across April – June.</p>
 
-<main id="calendars" class="calendars"></main>
-
-<section class="summary">
-  <h2>📅 Golden Week 2026 at a Glance</h2>
-  <p>
-    <strong>Apr 29 (Wed) – May 6 (Wed)</strong>.
-    Holidays: Apr 29 昭和の日, May 3 憲法記念日, May 4 みどりの日, May 5 こどもの日, May 6 振替休日.
-    Working days inside the window: <strong>Apr 30 (Thu), May 1 (Fri)</strong> —
-    most teams take PTO these 2 days for a full 8-day break.
-  </p>
-  <div id="teamSummary" class="team-summary"></div>
-</section>
-
-<section class="editor">
-  <h2>✏️ Set Vacation</h2>
-  <div class="editor-row">
-    <label>Member
-      <select id="editMember"></select>
-    </label>
-    <label>From
-      <input type="date" id="editFrom" />
-    </label>
-    <label>To
-      <input type="date" id="editTo" />
-    </label>
-    <label>Note
-      <input type="text" id="editNote" placeholder="e.g. Family trip" />
-    </label>
-    <button id="addBtn">Add</button>
-  </div>
-  <ul id="vacationList" class="vacation-list"></ul>
-
-  <div class="persist">
-    <h3>💾 Save changes</h3>
-    <p>Your edits are auto-saved in this browser. To share with the team, export and commit <code>vacations.json</code> to the repo.</p>
-    <div class="persist-actions">
-      <button id="exportBtn">⬇️ Download vacations.json</button>
-      <button id="copyBtn">📋 Copy JSON</button>
-      <button id="reloadBtn">🔄 Reload from repo</button>
-      <button id="resetBtn" class="danger">🗑️ Reset local edits</button>
+      <div class="gw-window">
+        <div class="gw-window-label">Golden Week window</div>
+        <div class="gw-window-dates">
+          <span class="big">Apr 29</span>
+          <span class="dash">→</span>
+          <span class="big">May 6</span>
+          <span class="duration">8 days max</span>
+        </div>
+        <div class="gw-window-hint">Take <strong>Apr 30</strong> and <strong>May 1</strong> off for the full break</div>
+      </div>
     </div>
-    <pre id="jsonPreview" class="json-preview"></pre>
-  </div>
-</section>
+  </header>
 
-<footer>
-  <small>Built for Irving Lee · Japan IA Team · Tony · Eric · Soichi · Yukino · Yoshi</small>
-</footer>
+  <section class="filter-bar">
+    <div class="filter-label">Filter</div>
+    <nav class="member-tabs" id="memberTabs"></nav>
+    <div class="legend">
+      <span class="chip"><span class="sw sw-gw"></span>Golden Week</span>
+      <span class="chip"><span class="sw sw-holiday"></span>Holiday</span>
+      <span class="chip"><span class="sw sw-weekend"></span>Weekend</span>
+      <span class="chip"><span class="sw sw-today"></span>Today</span>
+    </div>
+  </section>
+
+  <main id="calendars" class="calendars"></main>
+
+  <section class="card team-summary-card">
+    <div class="card-header">
+      <h2>Team time off</h2>
+      <p>Days booked during Golden Week (Apr 29 – May 6)</p>
+    </div>
+    <div id="teamSummary" class="team-summary"></div>
+  </section>
+
+  <section class="card editor-card">
+    <div class="card-header">
+      <h2>Add time off</h2>
+      <p>Pick a member and a date range. Saved locally in your browser.</p>
+    </div>
+    <form id="editForm" class="editor-form">
+      <label>
+        <span>Member</span>
+        <select id="editMember"></select>
+      </label>
+      <label>
+        <span>From</span>
+        <input type="date" id="editFrom" />
+      </label>
+      <label>
+        <span>To</span>
+        <input type="date" id="editTo" />
+      </label>
+      <label class="grow">
+        <span>Note <em>(optional)</em></span>
+        <input type="text" id="editNote" placeholder="Family trip, conference, …" />
+      </label>
+      <button type="submit" id="addBtn" class="btn btn-primary">Add</button>
+    </form>
+
+    <ul id="vacationList" class="vacation-list"></ul>
+
+    <div class="persist">
+      <div class="persist-header">
+        <h3>Share with the team</h3>
+        <p>Export <code>vacations.json</code> and commit it to the repo so everyone sees the same data.</p>
+      </div>
+      <div class="persist-actions">
+        <button id="exportBtn" class="btn">Download JSON</button>
+        <button id="copyBtn" class="btn">Copy JSON</button>
+        <button id="reloadBtn" class="btn btn-ghost">Reload from repo</button>
+        <button id="resetBtn" class="btn btn-danger">Reset local edits</button>
+      </div>
+      <pre id="jsonPreview" class="json-preview"></pre>
+    </div>
+  </section>
+
+  <footer>
+    <span>Built for Irving Lee</span>
+    <span class="dot">·</span>
+    <span>Japan IA · Tony · Eric · Soichi · Yukino · Yoshi</span>
+  </footer>
+
+</div>
 
 <script src="holidays.js"></script>
 <script src="app.js"></script>

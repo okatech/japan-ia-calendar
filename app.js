@@ -1,18 +1,21 @@
-// Load holidays/team config
 const HOLIDAYS = window.JP_HOLIDAYS_2026;
 const GW = window.GW_2026;
 const MEMBERS = window.TEAM_MEMBERS;
 const COLORS = window.MEMBER_COLORS;
+const MONTHS = window.MONTHS_TO_SHOW;
 
 const STORAGE_KEY = "japan-ia-vacations-v1";
-const REPO_JSON_URL = "vacations.json"; // served alongside index.html
+const REPO_JSON_URL = "vacations.json";
+
+const MONTH_NAMES = ["January","February","March","April","May","June",
+                     "July","August","September","October","November","December"];
 
 let state = {
-  vacations: [], // { member, from, to, note }
+  vacations: [],
   activeFilter: "ALL"
 };
 
-// --- Date helpers (local-time, no UTC drift) ---
+/* ───── helpers ───── */
 function ymd(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -27,13 +30,19 @@ function inRange(dateStr, from, to) {
   return dateStr >= from && dateStr <= to;
 }
 function daysBetween(from, to) {
-  const a = parseYmd(from), b = parseYmd(to);
-  return Math.round((b - a) / 86400000) + 1;
+  return Math.round((parseYmd(to) - parseYmd(from)) / 86400000) + 1;
+}
+function shortRange(from, to) {
+  const f = parseYmd(from), t = parseYmd(to);
+  const fmt = (d) => `${MONTH_NAMES[d.getMonth()].slice(0,3)} ${d.getDate()}`;
+  return from === to ? fmt(f) : `${fmt(f)} – ${fmt(t)}`;
+}
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 
-// --- Load / Save ---
+/* ───── load / save ───── */
 async function loadVacations() {
-  // 1. Try repo JSON
   let repoData = [];
   try {
     const res = await fetch(REPO_JSON_URL, { cache: "no-store" });
@@ -41,9 +50,8 @@ async function loadVacations() {
       const j = await res.json();
       if (Array.isArray(j.vacations)) repoData = j.vacations;
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {}
 
-  // 2. Local edits override
   const local = localStorage.getItem(STORAGE_KEY);
   if (local) {
     try {
@@ -52,36 +60,36 @@ async function loadVacations() {
         state.vacations = parsed.vacations;
         return;
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {}
   }
   state.vacations = repoData;
 }
 function saveLocal() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ vacations: state.vacations }, null, 2));
+  localStorage.setItem(STORAGE_KEY,
+    JSON.stringify({ vacations: state.vacations }, null, 2));
 }
 
-// --- Render calendars (Jan-Dec 2026, but emphasize Apr-May) ---
+/* ───── render: calendars ───── */
 function renderCalendars() {
   const root = document.getElementById("calendars");
   root.innerHTML = "";
-  // Show Apr & May prominently first, then surrounding months
-  const monthsOrder = [3, 4, 5, 6, 0, 1, 2, 7, 8, 9, 10, 11]; // Apr, May, Jun, Jul, then rest
-  for (const m of monthsOrder) {
-    root.appendChild(renderMonth(2026, m));
-  }
+  MONTHS.forEach(({ year, month }) => {
+    root.appendChild(renderMonth(year, month));
+  });
 }
 
 function renderMonth(year, monthIdx) {
-  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-  const monthJp   = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
-  const isGwMonth = (monthIdx === 3 || monthIdx === 4); // April or May
+  const isGwMonth = (year === 2026 && (monthIdx === 3 || monthIdx === 4));
 
   const card = document.createElement("div");
   card.className = "month";
 
   const header = document.createElement("div");
   header.className = "month-header" + (isGwMonth ? " gw-month" : "");
-  header.textContent = `${monthNames[monthIdx]} ${year} · ${monthJp[monthIdx]}`;
+  header.innerHTML = `
+    <div class="name">${MONTH_NAMES[monthIdx]}</div>
+    <div class="year">${year}</div>
+  `;
   card.appendChild(header);
 
   const dow = document.createElement("div");
@@ -103,7 +111,6 @@ function renderMonth(year, monthIdx) {
   let week = document.createElement("div");
   week.className = "week-row";
 
-  // leading empties
   for (let i = 0; i < startWeekday; i++) {
     const e = document.createElement("div");
     e.className = "day empty";
@@ -135,14 +142,13 @@ function renderMonth(year, monthIdx) {
       h.textContent = HOLIDAYS[dateStr];
       cell.appendChild(h);
     }
-    if (inRange(dateStr, GW.start, GW.end)) {
+    if (inRange(dateStr, GW.start, GW.end) && !HOLIDAYS[dateStr]) {
       const b = document.createElement("div");
       b.className = "gw-badge";
       b.textContent = "GW";
       cell.appendChild(b);
     }
 
-    // vacation dots
     const dots = document.createElement("div");
     dots.className = "vac-dots";
     state.vacations.forEach(v => {
@@ -165,7 +171,6 @@ function renderMonth(year, monthIdx) {
       week.className = "week-row";
     }
   }
-  // trailing empties
   if (week.children.length > 0) {
     while (week.children.length < 7) {
       const e = document.createElement("div");
@@ -178,13 +183,13 @@ function renderMonth(year, monthIdx) {
   return card;
 }
 
-// --- Member tabs ---
+/* ───── tabs ───── */
 function renderTabs() {
   const tabs = document.getElementById("memberTabs");
   tabs.innerHTML = "";
   ["ALL", ...MEMBERS].forEach(m => {
     const b = document.createElement("button");
-    b.textContent = m === "ALL" ? "All Team" : m;
+    b.textContent = m === "ALL" ? "All" : m;
     if (state.activeFilter === m) b.classList.add("active");
     b.addEventListener("click", () => {
       state.activeFilter = m;
@@ -194,11 +199,12 @@ function renderTabs() {
   });
 }
 
-// --- Editor ---
+/* ───── editor list + json ───── */
 function renderEditor() {
   const sel = document.getElementById("editMember");
-  sel.innerHTML = MEMBERS.map(m => `<option>${m}</option>`).join("");
-  // sensible defaults: GW workdays Apr 30 - May 1
+  if (!sel.options.length) {
+    sel.innerHTML = MEMBERS.map(m => `<option>${m}</option>`).join("");
+  }
   if (!document.getElementById("editFrom").value) {
     document.getElementById("editFrom").value = "2026-04-30";
     document.getElementById("editTo").value = "2026-05-01";
@@ -207,23 +213,27 @@ function renderEditor() {
   const list = document.getElementById("vacationList");
   list.innerHTML = "";
   if (state.vacations.length === 0) {
-    list.innerHTML = '<li style="color:#6b7280;justify-content:center">No vacations recorded yet — add one above ✨</li>';
+    const li = document.createElement("li");
+    li.className = "empty-state";
+    li.textContent = "No time off recorded yet.";
+    list.appendChild(li);
   }
   state.vacations
     .slice()
     .sort((a, b) => a.from.localeCompare(b.from))
-    .forEach((v, idx) => {
+    .forEach((v) => {
       const li = document.createElement("li");
       const days = daysBetween(v.from, v.to);
       li.innerHTML = `
-        <span class="who" style="color:${COLORS[v.member]||'#000'}">${v.member}</span>
-        <span class="range">${v.from} → ${v.to} (${days}d)${v.note ? ' · ' + escapeHtml(v.note) : ''}</span>
+        <span class="who" style="color:${COLORS[v.member]||'#fff'}">${v.member}</span>
+        <span class="range">${v.from} → ${v.to} · ${days}d</span>
+        ${v.note ? `<span class="note">${escapeHtml(v.note)}</span>` : ""}
       `;
       const del = document.createElement("button");
-      del.textContent = "Delete";
+      del.className = "btn del";
+      del.textContent = "Remove";
       del.addEventListener("click", () => {
-        const realIdx = state.vacations.indexOf(v);
-        state.vacations.splice(realIdx, 1);
+        state.vacations.splice(state.vacations.indexOf(v), 1);
         saveLocal();
         renderAll();
       });
@@ -235,19 +245,14 @@ function renderEditor() {
     JSON.stringify({ vacations: state.vacations }, null, 2);
 }
 
-function escapeHtml(s) {
-  return s.replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[c]));
-}
-
-// --- Team summary cards ---
+/* ───── team summary ───── */
 function renderTeamSummary() {
   const root = document.getElementById("teamSummary");
   root.innerHTML = "";
   MEMBERS.forEach(m => {
     const card = document.createElement("div");
     card.className = "team-card";
+    card.style.setProperty("--member-color", COLORS[m]);
     const myVacs = state.vacations.filter(v => v.member === m);
     const inGw = myVacs.filter(v => v.from <= GW.end && v.to >= GW.start);
     const totalGwDays = inGw.reduce((sum, v) => {
@@ -255,11 +260,12 @@ function renderTeamSummary() {
       const to   = v.to   > GW.end   ? GW.end   : v.to;
       return sum + daysBetween(from, to);
     }, 0);
+    const ranges = myVacs.map(v => shortRange(v.from, v.to)).join(" · ") ||
+                   "<em>nothing booked</em>";
     card.innerHTML = `
-      <h4 style="color:${COLORS[m]}">${m}</h4>
-      <div class="vac-line">GW PTO: <strong>${totalGwDays} day${totalGwDays===1?'':'s'}</strong></div>
-      <div class="vac-line">Total entries: ${myVacs.length}</div>
-      <div class="vac-line">${myVacs.map(v => `${v.from.slice(5)}–${v.to.slice(5)}`).join(', ') || '<em>none</em>'}</div>
+      <div class="name">${m}</div>
+      <div class="gw-days">${totalGwDays}<small>${totalGwDays===1?'day':'days'} in GW</small></div>
+      <div class="ranges">${ranges}</div>
     `;
     root.appendChild(card);
   });
@@ -272,15 +278,16 @@ function renderAll() {
   renderTeamSummary();
 }
 
-// --- Wire events ---
+/* ───── events ───── */
 function wire() {
-  document.getElementById("addBtn").addEventListener("click", () => {
+  document.getElementById("editForm").addEventListener("submit", (e) => {
+    e.preventDefault();
     const m = document.getElementById("editMember").value;
     const f = document.getElementById("editFrom").value;
     const t = document.getElementById("editTo").value;
     const n = document.getElementById("editNote").value.trim();
-    if (!m || !f || !t) { alert("Member / From / To are required"); return; }
-    if (f > t) { alert("'From' must be on or before 'To'"); return; }
+    if (!m || !f || !t) { alert("Member, From and To are required."); return; }
+    if (f > t) { alert("'From' must be on or before 'To'."); return; }
     state.vacations.push({ member: m, from: f, to: t, note: n });
     document.getElementById("editNote").value = "";
     saveLocal();
@@ -294,9 +301,7 @@ function wire() {
     );
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = "vacations.json";
-    a.click();
+    a.href = url; a.download = "vacations.json"; a.click();
     URL.revokeObjectURL(url);
   });
 
@@ -304,7 +309,10 @@ function wire() {
     await navigator.clipboard.writeText(
       JSON.stringify({ vacations: state.vacations }, null, 2)
     );
-    alert("Copied! Paste into vacations.json and commit.");
+    const btn = document.getElementById("copyBtn");
+    const orig = btn.textContent;
+    btn.textContent = "Copied!";
+    setTimeout(() => btn.textContent = orig, 1500);
   });
 
   document.getElementById("reloadBtn").addEventListener("click", async () => {
@@ -321,7 +329,6 @@ function wire() {
   });
 }
 
-// --- Boot ---
 (async function init() {
   await loadVacations();
   wire();
