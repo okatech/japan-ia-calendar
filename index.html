@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Japan IA Calendar — Golden Week 2026</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="title">
+    <h1>🗾 Japan IA Calendar</h1>
+    <p class="subtitle">For Irving Lee · Golden Week & Team Vacations</p>
+  </div>
+  <nav class="member-tabs" id="memberTabs"></nav>
+</header>
+
+<section class="legend">
+  <span class="chip chip-gw">Golden Week</span>
+  <span class="chip chip-holiday">Public Holiday</span>
+  <span class="chip chip-weekend">Weekend</span>
+  <span class="chip chip-vacation">Vacation (PTO)</span>
+  <span class="chip chip-today">Today</span>
+</section>
+
+<main id="calendars" class="calendars"></main>
+
+<section class="summary">
+  <h2>📅 Golden Week 2026 at a Glance</h2>
+  <p>
+    <strong>Apr 29 (Wed) – May 6 (Wed)</strong>.
+    Holidays: Apr 29 昭和の日, May 3 憲法記念日, May 4 みどりの日, May 5 こどもの日, May 6 振替休日.
+    Working days inside the window: <strong>Apr 30 (Thu), May 1 (Fri)</strong> —
+    most teams take PTO these 2 days for a full 8-day break.
+  </p>
+  <div id="teamSummary" class="team-summary"></div>
+</section>
+
+<section class="editor">
+  <h2>✏️ Set Vacation</h2>
+  <div class="editor-row">
+    <label>Member
+      <select id="editMember"></select>
+    </label>
+    <label>From
+      <input type="date" id="editFrom" />
+    </label>
+    <label>To
+      <input type="date" id="editTo" />
+    </label>
+    <label>Note
+      <input type="text" id="editNote" placeholder="e.g. Family trip" />
+    </label>
+    <button id="addBtn">Add</button>
+  </div>
+  <ul id="vacationList" class="vacation-list"></ul>
+
+  <div class="persist">
+    <h3>💾 Save changes</h3>
+    <p>Your edits are auto-saved in this browser. To share with the team, export and commit <code>vacations.json</code> to the repo.</p>
+    <div class="persist-actions">
+      <button id="exportBtn">⬇️ Download vacations.json</button>
+      <button id="copyBtn">📋 Copy JSON</button>
+      <button id="reloadBtn">🔄 Reload from repo</button>
+      <button id="resetBtn" class="danger">🗑️ Reset local edits</button>
+    </div>
+    <pre id="jsonPreview" class="json-preview"></pre>
+  </div>
+</section>
+
+<footer>
+  <small>Built for Irving Lee · Japan IA Team · Tony · Eric · Soichi · Yukino · Yoshi</small>
+</footer>
+
+<script src="holidays.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
